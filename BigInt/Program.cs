@@ -11,8 +11,8 @@ namespace BigInt
 
         static void Test()
         {
-            BigInteger num1 = 151;
-            BigInteger num2 = -38;
+            BigInteger num1 = BigInteger.Parse("-73545");
+            BigInteger num2 = BigInteger.Parse("9188");
             BigInteger resultI = num2 + num1;
 
             bigInt a = new bigInt(num1.ToString());
@@ -26,6 +26,9 @@ namespace BigInt
             //Действие тут
             c = a + b;
 
+            string resultEtalon = resultI.ToString();
+            string resultMyBigInt = c.ToString();
+
             Console.WriteLine("\nПосле сложения");
             Console.WriteLine($"{a}" +
                             $"\n{b}" +
@@ -34,6 +37,8 @@ namespace BigInt
 
             Console.WriteLine("\nЭталон");
             Console.WriteLine(resultI);
+
+            Console.WriteLine(resultMyBigInt == resultEtalon);
         }
     }
 }
