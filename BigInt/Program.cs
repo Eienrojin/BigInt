@@ -11,25 +11,26 @@ namespace BigInt
 
         static void Test()
         {
-            BigInteger num1 = BigInteger.Parse("-73545");
-            BigInteger num2 = BigInteger.Parse("9188");
-            BigInteger resultI = num2 + num1;
+            BigInteger num1 = BigInteger.Parse("35657576");
+            BigInteger num2 = BigInteger.Parse("-545463");
+            BigInteger resultI;
 
-            bigInt a = new bigInt(num1.ToString());
-            bigInt b = new bigInt(num2.ToString());
-            bigInt c = new bigInt("0");
+            BigInt a = new BigInt(num1.ToString());
+            BigInt b = new BigInt(num2.ToString());
+            BigInt c = new BigInt("0");
 
             Console.WriteLine("До действий");
             Console.WriteLine(a);
             Console.WriteLine(b);
 
             //Действие тут
-            c = a + b;
+            resultI = num1 - num2;
+            c = a - b;
 
             string resultEtalon = resultI.ToString();
             string resultMyBigInt = c.ToString();
 
-            Console.WriteLine("\nПосле сложения");
+            Console.WriteLine("\nПосле вычитания");
             Console.WriteLine($"{a}" +
                             $"\n{b}" +
                             $"\n-------" +

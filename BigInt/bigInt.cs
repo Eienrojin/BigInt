@@ -1,24 +1,4 @@
-﻿/*TODO*/
-/*
-* 
-* СЛОЖЕНИЕ ПОЛОЖИТЕЛЬНОГО И ОТРИЦАТЕЛЬНОГО ЧИСЛА, ГДЕ |-А| > B
-* ДОБАВИТЬ ПРОВЕРКУ ЧИСЛА НА ВВОД
-* РЕШИТЬ ПРОБЛЕМУ С OVERFLOW (-4465453 + 5765486)
-*/
-
-/*СДЕЛАНО*/
-/*
- * ПОФИКСИТЬ СЛОЖЕНИЕ ТИПА 9000+1000 = 0000 
- *
- * ПАРСИНГ ЗНАКА ЧИСЛА ПО ПЕРВОМУ ЗНАКУ
- * 0     - НУЛЕВОЕ ЗНАЧЕНИЕ
- * -432  - ОТРИЦАТЕЛЬНОЕ
- * 432   - ПОЛОЖИТЕЛЬНОЕ
- * 
- * ИММУТАЦИЯ МЕТОДА ADD
- */
-
-/*
+﻿/*
  * ПРОБЛЕМНЫЕ ЧИСЛА
  * 5563 + (-4466)
  * (-4465453 + 5765486)
@@ -26,18 +6,18 @@
 
 namespace BigInt
 {
-    internal class bigInt : IComparable<bigInt>
+    internal class BigInt : IComparable<BigInt>
     {
-        public bigInt(string values)
+        public BigInt(string values)
         {
             Values = new();
 
-            if (values[0] == '0') Positive = 0;
-            if (values[0] != '0' && values[0] != '-') Positive = 1;
+            if (values[0] == '0') Sign = 0;
+            if (values[0] != '0' && values[0] != '-') Sign = 1;
 
             if (values[0] == '-')
             {
-                Positive = -1;
+                Sign = -1;
                 values = values.Remove(0, 1);
             }
 
@@ -49,58 +29,66 @@ namespace BigInt
             }
         }
 
-        public bigInt(bigInt other)
+        private BigInt(BigInt other)
         {
-            Values = other.Values;
-            Positive = other.Positive;
+            Values = new(other.Values);
+            Sign = other.Sign;
         }
 
         private List<sbyte> Values { get; set; }
 
-        private int Positive { get; set; } = 0;
+        public int Sign { get; set; } = 0;
 
         /*------------CALCULATING------------*/
 
         /*------------ADD------------*/
-        public static bigInt operator +(bigInt left, bigInt right)
+        public static BigInt operator +(BigInt left, BigInt right)
         {
-            return Add(left, right);
+            return Add(left, right, false);
         }
 
         //Note: it work only with positive values
-        private static bigInt Add(bigInt a, bigInt b)
+        private static BigInt Add(BigInt a, BigInt b, bool isSubtraction)
         {
             int x, y, tempResult, result;
             bool differentSign = false;
             bool needNegativeSign = false;
-            bigInt left, right;
+            BigInt left, right;
 
             int overflow = 0;
             string tempString = "";
             string tempString2 = "";
-            bigInt bigResult = new("0");
+            BigInt bigResult = new("0");
 
             List<sbyte> tempList = new List<sbyte>();
 
             //Bigger number will be on top, smaller on bottom
-            if (GetBiggerNum(a, b) == 1)
+            if (!isSubtraction)
             {
-                tempString = a.ToString();
-                tempString2 = b.ToString();
+                if (GetBiggerNum(a, b) == 1)
+                {
+                    tempString = a.ToString();
+                    tempString2 = b.ToString();
+                }
+                else if (GetBiggerNum(a, b) == 0)
+                {
+                    tempString = a.ToString();
+                    tempString2 = b.ToString();
+                }
+                else if (GetBiggerNum(a, b) == -1)
+                {
+                    tempString = b.ToString();
+                    tempString2 = a.ToString();
+                }
             }
-            else if (GetBiggerNum(a, b) == 0)
+            else
             {
-                tempString = a.ToString();
-                tempString2 = a.ToString();
-            }
-            else if (GetBiggerNum(a,b) == -1)
-            {
-                tempString = b.ToString();
-                tempString2 = a.ToString();
+                tempString = a.ToString(); 
+                tempString2 = b.ToString(); 
             }
 
-            left = new bigInt(tempString);
-            right = new bigInt(tempString2);
+            left = new BigInt(tempString);
+            right = new BigInt(tempString2);
 
             MakeEqualLength(left, right);
 
@@ -109,25 +97,17 @@ namespace BigInt
                 x = left.Values[i];
                 y = right.Values[i];
 
-                if (left.Positive != right.Positive)
+                if (left.Sign != right.Sign)
                 {
                     differentSign = true;
 
                     x += overflow;
                     overflow = 0;
 
-                    if (Math.Abs(x) == Math.Abs(y))
-                    {
-                        x += 10;
-                    }
-                    if (Math.Abs(x) < Math.Abs(y))
-                    {
-                        x += 10;
-                        needNegativeSign = true;
-                    }
+                    needNegativeSign = IsNeedOverflow(ref x, y);
                 }
 
-                tempResult = (x * left.Positive) + (y * right.Positive) + overflow;
+                tempResult = (x * left.Sign) + (y * right.Sign) + overflow;
 
                 if (differentSign && needNegativeSign)
                 {
@@ -142,44 +122,20 @@ namespace BigInt
                 result = tempResult % 10;
 
                 tempList.Add((sbyte)result);
-
-                if (i == 0 && overflow == 1)
-                {
-                    tempList.Insert(tempList.Count, 1);
-                }
             }
 
-            GetAbsList(tempList);
-            tempList.ToString();
-
-            for (int i = 0; i <= tempList.Count - 1; i++)
+            if (left.Sign == right.Sign && overflow != 0)
             {
-                bigResult.Values.Add(tempList[i]);
+                tempList.Insert(tempList.Count, 1);
             }
 
-            //preparing stage
-            //delete zeroes from the front and reverse
-            bigResult.Values.RemoveAt(0);
-            bigResult.Values.Reverse();
+            bigResult = PrepareResult(bigResult, tempList);
 
-            DeleteUnusualZeroes(bigResult);
-
-            bigResult.Positive = SetSignForAdd(left, right);
+            DeleteUnusualZeroes(right);
+            bigResult.Sign = IdentifySign(left, right);
 
             return bigResult;
         }
-
-        //ДОРАБОТАТЬ
-        private static int SetSignForAdd(bigInt left, bigInt right)
-        {
-            if (left.Positive == right.Positive)
-            {
-                return left.Positive;
-            }
-
-            return 0;
-        }
-
         private static void GetAbsList(List<sbyte> list)
         {
             for (int i = 0; i < list.Count; i++)
@@ -189,7 +145,7 @@ namespace BigInt
         }
 
         // Adds zeroes to the front of some List<>, if count of elements not equal
-        private static void MakeEqualLength(bigInt left, bigInt right)
+        private static void MakeEqualLength(BigInt left, BigInt right)
         {
             if (left.Values.Count != right.Values.Count)
             {
@@ -203,7 +159,7 @@ namespace BigInt
             }
         }
 
-        private static int GetBiggerNum(bigInt left, bigInt right)
+        private static int GetBiggerNum(BigInt left, BigInt right)
         {
             if (left.Values.Count.CompareTo(right.Values.Count) == 0)
             {
@@ -233,7 +189,7 @@ namespace BigInt
             return 0;
         }
 
-        private static void DeleteUnusualZeroes(bigInt bigInt)
+        private static void DeleteUnusualZeroes(BigInt bigInt)
         {
             for (int i = 0; i < bigInt.Values.Count; i++)
             {
@@ -244,37 +200,122 @@ namespace BigInt
             }
         }
 
+        /*------------SUBTRACTION------------*/
+        /*        public static BigInt operator -(BigInt left, BigInt right)
+                {
+                    return Subtraction(left, right);
+                }*/
+
+        public static BigInt operator -(BigInt left, BigInt right)
+        {
+            return Add(left, -right, true);
+        }
+
+        public static BigInt operator -(BigInt bigInt)
+        {
+            BigInt bigInt2 = new(bigInt);
+            bigInt2.Sign *= -1;
+
+            return bigInt2;
+        }
+
+        /*------------CALCULATING UTILLS------------*/
+        //ДОРАБОТАТЬ
+        private static int IdentifySign(BigInt left, BigInt right)
+        {
+            int sign = 0;
+
+            //Работает - не трогай
+            if (left.Sign == right.Sign)
+            {
+                return left.Sign;
+            }
+
+            if (left.Values.Count != right.Values.Count)
+            {
+                sign = left.Values.Count > right.Values.Count ? 1 : -1;
+            }
+            else
+            {
+                for (int i = 0; i < left.Values.Count; i++)
+                {
+                    sign = Math.Abs(left.Values[i]) > right.Values[i] ? 1 : -1;
+                }
+            }
+
+            return sign;
+        }
+
+        private static BigInt PrepareResult(BigInt result, List<sbyte> list)
+        {
+            BigInt tempResult = result;
+
+            GetAbsList(list);
+            list.ToString();
+
+            for (int i = 0; i <= list.Count - 1; i++)
+            {
+                tempResult.Values.Add(list[i]);
+            }
+
+            tempResult.Values.RemoveAt(0);
+            tempResult.Values.Reverse();
+
+            DeleteUnusualZeroes(tempResult);
+
+            return tempResult;
+        }
+
+        private static bool IsNeedOverflow(ref int x, int y)
+        {
+            bool needNegativeSign = false;
+
+            if (Math.Abs(x) == Math.Abs(y))
+            {
+                x += 10;
+            }
+            if (Math.Abs(x) < Math.Abs(y))
+            {
+                x += 10;
+                needNegativeSign = true;
+            }
+
+            return needNegativeSign;
+        }
+
         /*------------COMPARISON------------*/
-        public static bool operator >(bigInt left, bigInt right)
+        public static bool operator >(BigInt left, BigInt right)
         {
             return left.CompareTo(right) == 1;
         }
-        public static bool operator <(bigInt left, bigInt right)
+        public static bool operator <(BigInt left, BigInt right)
         {
             return left.CompareTo(right) == -1;
         }
-        public static bool operator >=(bigInt left, bigInt right)
+        public static bool operator >=(BigInt left, BigInt right)
         {
             return left > right || left == right;
         }
-        public static bool operator <=(bigInt left, bigInt right)
+        public static bool operator <=(BigInt left, BigInt right)
         {
             return left < right || left == right;
         }
-        public static bool operator ==(bigInt left, bigInt right)
+        public static bool operator ==(BigInt left, BigInt right)
         {
             return left.CompareTo(right) == 0;
         }
-        public static bool operator !=(bigInt left, bigInt right)
+        public static bool operator !=(BigInt left, BigInt right)
         {
             return left.CompareTo(right) != 0;
         }
 
+
+        /*------------STANDART METODS------------*/
         public override string ToString()
         {
             string result;
 
-            if (Positive == -1)
+            if (Sign == -1)
                 result = "-" + string.Join("", Values);
             else
                 result = string.Join("", Values);
@@ -283,11 +324,11 @@ namespace BigInt
             return result;
         }
 
-        public int CompareTo(bigInt other)
+        public int CompareTo(BigInt other)
         {
-            if (Positive != other.Positive) return Positive.CompareTo(other.Positive);
+            if (Sign != other.Sign) return Sign.CompareTo(other.Sign);
 
-            if (Values.Count != other.Values.Count) return Values.Count.CompareTo(other.Values.Count) * Positive;
+            if (Values.Count != other.Values.Count) return Values.Count.CompareTo(other.Values.Count) * Sign;
 
             if (Values.Count != other.Values.Count) return Values.Count.CompareTo(other.Values.Count);
 
