@@ -2,4 +2,4 @@
 Реализовано сравнение, сложение и вычитание.
 Знак определяется по первому числу, проверка на ошибки не производится, т.к. в исходном BigInteger такого нет
 
-![Uploading Screenshot_2.png…]()
+![Screenshot_2](https://user-images.githubusercontent.com/77877550/165137986-202f18ba-c733-4848-af29-9ffdec294304.png)
